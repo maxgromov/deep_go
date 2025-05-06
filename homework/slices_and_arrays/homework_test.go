@@ -10,36 +10,64 @@ import (
 // go test -v homework_test.go
 
 type CircularQueue struct {
-	values []int
-	// need to implement
+	values      []int
+	front, rear int // изначально будут указывать на 0 индекс
+	size        int
+	count       int // счетчик количества элементов в очереди
 }
 
 func NewCircularQueue(size int) CircularQueue {
-	return CircularQueue{} // need to implement
+	return CircularQueue{
+		values: make([]int, size),
+		size:   size,
+	}
 }
 
 func (q *CircularQueue) Push(value int) bool {
-	return false // need to implement
+	if !q.Full() {
+		q.values[q.rear] = value
+		q.rear = (q.rear + 1) % q.size
+		q.count++
+		return true
+	}
+
+	return false
 }
 
 func (q *CircularQueue) Pop() bool {
-	return false // need to implement
+
+	if !q.Empty() {
+		q.values[q.front] = -1 // в целом, можем не заменять, так как указатель уже сместим и счетчик количества уменьшим
+		q.front = (q.front + 1) % q.size
+		q.count--
+		return true
+	}
+	return false
 }
 
 func (q *CircularQueue) Front() int {
-	return -1 // need to implement
+	if !q.Empty() {
+		return q.values[q.front]
+	}
+
+	return -1
 }
 
 func (q *CircularQueue) Back() int {
-	return -1 // need to implement
+	if !q.Empty() {
+		lastIdx := (q.rear - 1 + q.size) % q.size
+		return q.values[lastIdx]
+	}
+
+	return -1
 }
 
 func (q *CircularQueue) Empty() bool {
-	return false // need to implement
+	return q.count == 0
 }
 
 func (q *CircularQueue) Full() bool {
-	return false // need to implement
+	return q.count == q.size
 }
 
 func TestCircularQueue(t *testing.T) {
