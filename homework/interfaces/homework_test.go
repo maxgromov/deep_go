@@ -1,6 +1,9 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,21 +21,40 @@ type MessageService struct {
 }
 
 type Container struct {
-	// need to implement
+	constructors map[string]reflect.Value
 }
 
 func NewContainer() *Container {
-	// need to implement
-	return &Container{}
+	return &Container{constructors: make(map[string]reflect.Value)}
 }
 
+// RegisterType - зарегистрировать конструктор по созданию типа
 func (c *Container) RegisterType(name string, constructor interface{}) {
-	// need to implement
+	val := reflect.ValueOf(constructor)
+
+	if val.Kind() != reflect.Func {
+		panic("constructor must be a func")
+	}
+	c.constructors[name] = val
 }
 
+// Resolve - создать объект с использованием конструктора
 func (c *Container) Resolve(name string) (interface{}, error) {
-	// need to implement
-	return nil, nil
+	constructor, ok := c.constructors[name]
+	if !ok {
+		return nil, fmt.Errorf("no constructor for %q", name)
+	}
+
+	if constructor.Type().NumIn() != 0 {
+		return nil, errors.New("constructor must not accept arguments")
+	}
+
+	results := constructor.Call(nil)
+	if len(results) != 1 {
+		return nil, errors.New("constructor must return result")
+	}
+
+	return results[0].Interface(), nil
 }
 
 func TestDIContainer(t *testing.T) {
