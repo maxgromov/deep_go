@@ -48,8 +48,8 @@ const (
 type GamePerson struct {
 	x, y, z       int32
 	gold          uint32
-	attributeMask uint32 // 0-9 бит мана, 10-19 здоровье, 20 дом, 21 оружие, 22 семья, 23-24 тип персонажа
-	statsMask     uint16 // 0-3 бит уважение, 4-7 сила, 8-11 опыт, 12-15 уровень
+	attributeMask uint32 // мана - 0-9; здоровье - [10-19]; 20 - дом; 21 - оружие; 22 - семья; тип персонажа - 23-24
+	statsMask     uint16 // уважение - 0-3; сила - 4-7; опыт - 8-11; уровень - 12-15
 	name          [nameMaxLength]byte
 }
 
