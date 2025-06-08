@@ -11,27 +11,55 @@ import (
 type COWBuffer struct {
 	data []byte
 	refs *int
-	// need to implement
 }
 
+// NewCOWBuffer - создать буффер с определенными данными
 func NewCOWBuffer(data []byte) COWBuffer {
-	return COWBuffer{} // need to implement
+	r := 1
+
+	//d := make([]byte, len(data))
+	//copy(d, data)
+
+	return COWBuffer{
+		data: data,
+		refs: &r,
+	}
 }
 
+// Clone - создать новую копию буфера
 func (b *COWBuffer) Clone() COWBuffer {
-	return COWBuffer{} // need to implement
+	*b.refs++
+	return *b
 }
 
+// Close - перестать использовать копию буффера
 func (b *COWBuffer) Close() {
-	// need to implement
+	if *b.refs > 0 {
+		*b.refs--
+	}
 }
 
+// Update - изменить определенный байт в буффере
 func (b *COWBuffer) Update(index int, value byte) bool {
-	return false // need to implement
+	if index < 0 || index >= len(b.data) {
+		return false
+	}
+	if *b.refs > 1 {
+		*b.refs--
+
+		newData := NewCOWBuffer(append([]byte(nil), b.data...))
+
+		b.data = newData.data
+		b.refs = newData.refs
+	}
+
+	b.data[index] = value
+	return true
 }
 
+// String - сконвертировать буффер в строку
 func (b *COWBuffer) String() string {
-	return "" // need to implement
+	return unsafe.String(unsafe.SliceData(b.data), len(b.data))
 }
 
 func TestCOWBuffer(t *testing.T) {
