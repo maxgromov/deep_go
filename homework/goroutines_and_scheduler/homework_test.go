@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/heap"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,28 +10,77 @@ import (
 type Task struct {
 	Identifier int
 	Priority   int
+	index      int
+}
+
+type TaskHeap []*Task
+
+func (h TaskHeap) Len() int           { return len(h) }
+func (h TaskHeap) Less(i, j int) bool { return h[i].Priority > h[j].Priority } // max-heap
+func (h TaskHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+	h[i].index = i
+	h[j].index = j
+}
+
+func (h *TaskHeap) Push(x interface{}) {
+	n := len(*h)
+	task := x.(*Task)
+	task.index = n
+	*h = append(*h, task)
+}
+
+func (h *TaskHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	task := old[n-1]
+	old[n-1] = nil  // don't stop the GC from reclaiming the item eventually (comment from libs)
+	task.index = -1 // for safety (comment from libs)
+	*h = old[0 : n-1]
+	return task
 }
 
 type Scheduler struct {
-	// need to implement
+	taskHeap TaskHeap
+	taskMap  map[int]*Task
 }
 
 func NewScheduler() Scheduler {
-	// need to implement
-	return Scheduler{}
+	return Scheduler{
+		taskMap: make(map[int]*Task),
+	}
 }
 
+// AddTask- запланировать задачу
 func (s *Scheduler) AddTask(task Task) {
-	// need to implement
+	t := Task{
+		Identifier: task.Identifier,
+		Priority:   task.Priority,
+	}
+
+	s.taskMap[task.Identifier] = &t
+	heap.Push(&s.taskHeap, &t)
 }
 
+// ChangeTaskPriority - изменить приоритет задачи по идентификатору
 func (s *Scheduler) ChangeTaskPriority(taskID int, newPriority int) {
-	// need to implement
+	if task, ok := s.taskMap[taskID]; ok {
+		task.Priority = newPriority
+		heap.Fix(&s.taskHeap, task.index)
+	}
 }
 
+// GetTask - получить задачу с наибольшим приоритетом для исполнения
 func (s *Scheduler) GetTask() Task {
-	// need to implement
-	return Task{}
+	if len(s.taskHeap) == 0 {
+		return Task{}
+	}
+	task := heap.Pop(&s.taskHeap).(*Task)
+	delete(s.taskMap, task.Identifier)
+	return Task{
+		Identifier: task.Identifier,
+		Priority:   task.Priority,
+	}
 }
 
 func TestTrace(t *testing.T) {
@@ -56,6 +106,7 @@ func TestTrace(t *testing.T) {
 	scheduler.ChangeTaskPriority(1, 100)
 
 	task = scheduler.GetTask()
+	task1.Priority = 100
 	assert.Equal(t, task1, task)
 
 	task = scheduler.GetTask()
