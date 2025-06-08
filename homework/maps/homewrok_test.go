@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,31 +11,147 @@ import (
 // go test -v homework_test.go
 
 type OrderedMap struct {
-	// need to implement
+	root *node
+	size int
 }
 
+type node struct {
+	key         int
+	value       int
+	left, right *node
+}
+
+// NewOrderedMap - создать упорядоченный словарь
 func NewOrderedMap() OrderedMap {
-	return OrderedMap{} // need to implement
+	return OrderedMap{}
 }
 
+// Insert - добавить элемент в словарь
 func (m *OrderedMap) Insert(key, value int) {
-	// need to implement
+	var inserted bool
+	m.root, inserted = insert(m.root, key, value)
+	if inserted {
+		m.size++
+	}
 }
 
+func insert(n *node, key, value int) (*node, bool) {
+	if n == nil {
+		return &node{
+			key:   key,
+			value: value,
+		}, true
+	}
+
+	switch {
+	case key < n.key:
+		var inserted bool
+		n.left, inserted = insert(n.left, key, value)
+		return n, inserted
+
+	case key > n.key:
+		var inserted bool
+		n.right, inserted = insert(n.right, key, value)
+		return n, inserted
+
+	default:
+		fmt.Println("key already exist")
+		return n, false
+	}
+}
+
+// Erase - удалить элемент из словаря
 func (m *OrderedMap) Erase(key int) {
-	// need to implement
+	var deleted bool
+	m.root, deleted = deleteNode(m.root, key)
+	if deleted {
+		m.size--
+	}
 }
 
+func deleteNode(n *node, key int) (*node, bool) {
+	if n == nil {
+		return nil, false
+	}
+
+	var isDeleted bool
+
+	switch {
+	case key < n.key:
+		n.left, isDeleted = deleteNode(n.left, key)
+
+	case key > n.key:
+		n.right, isDeleted = deleteNode(n.right, key)
+
+	default:
+		isDeleted = true
+		if n.left == nil && n.right == nil {
+			return nil, isDeleted
+		}
+
+		if n.left == nil {
+			return n.right, isDeleted
+		}
+		if n.right == nil {
+			return n.left, isDeleted
+		}
+
+		// преемник
+		s := minNode(n.right)
+		n.key = s.key
+		n.value = s.value
+		n.right, _ = deleteNode(n.right, s.key)
+	}
+
+	return n, isDeleted
+}
+
+// поиск преемника
+func minNode(n *node) *node {
+	for n.left != nil {
+		n = n.left
+	}
+
+	return n
+}
+
+// Contains - проверить существование элемента в словаре
 func (m *OrderedMap) Contains(key int) bool {
-	return false // need to implement
+	return contain(m.root, key)
 }
 
+func contain(n *node, key int) bool {
+	if n == nil {
+		return false
+	}
+	switch {
+	case key < n.key:
+		return contain(n.left, key)
+	case key > n.key:
+		return contain(n.right, key)
+	default:
+		return true
+	}
+}
+
+// Size - получить количество элементов в словаре
 func (m *OrderedMap) Size() int {
-	return 0 // need to implement
+	return m.size
 }
 
+// ForEach - применить функцию к каждому элементу словаря от меньшего к большему
 func (m *OrderedMap) ForEach(action func(int, int)) {
-	// need to implement
+	inOrder(m.root, action)
+}
+
+// обход: левое поддерево - узел - правое поддерево
+func inOrder(n *node, action func(int, int)) {
+	if n == nil {
+		return
+	}
+	inOrder(n.left, action)
+	action(n.key, n.value)
+	inOrder(n.right, action)
 }
 
 func TestCircularQueue(t *testing.T) {
